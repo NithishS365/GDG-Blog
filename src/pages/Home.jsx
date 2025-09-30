@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllBlogs } from '../services/blogService';
+import { getAllBlogs } from '../utils/blog';
 import { useAuth } from '../contexts/AuthContext';
 
 function Home() {

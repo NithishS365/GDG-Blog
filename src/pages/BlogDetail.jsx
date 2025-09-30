@@ -1,247 +1,239 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { getBlog, deleteBlog } from '../utils/blog';
 import { useAuth } from '../contexts/AuthContext';
-import { blogService } from '../utils/blog';
-import { ArrowLeft, Calendar, User, Edit, Trash2, Share2 } from 'lucide-react';
 
-const BlogDetail = () => {
+function BlogDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
-  const { user, isAuthenticated } = useAuth();
   const [blog, setBlog] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const blogData = blogService.getBlogById(id);
-    setBlog(blogData);
-    setLoading(false);
+    fetchBlog();
   }, [id]);
 
-  const handleDelete = () => {
-    if (user && blog && blog.authorId === user.id) {
-      const result = blogService.deleteBlog(blog.id, user.id);
-      if (result.success) {
-        navigate('/dashboard');
+  const fetchBlog = async () => {
+    try {
+      setLoading(true);
+      const blogData = await getBlog(id);
+      if (blogData) {
+        setBlog(blogData);
+      } else {
+        setBlog(null);
       }
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching blog:', error);
+      setBlog(null);
+      setLoading(false);
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: blog.title,
-          text: blog.content.substring(0, 100) + '...',
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.log('Error sharing:', err);
-      }
-    } else {
-      // Fallback - copy to clipboard
-      navigator.clipboard.writeText(window.location.href);
-      alert('Link copied to clipboard!');
+  const handleDelete = async () => {
+    if (!window.confirm('Are you sure you want to delete this blog post? This action cannot be undone.')) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await deleteBlog(id);
+      toast.success('Blog post deleted successfully! 🗑️');
+      navigate('/');
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      toast.error('Failed to delete blog post. Please try again.');
+    } finally {
+      setDeleting(false);
     }
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+    if (!dateString) return 'Recently';
+    try {
+      return new Date(dateString).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    } catch {
+      return 'Recently';
+    }
   };
 
-  const getReadingTime = (content) => {
-    const wordsPerMinute = 200;
-    const wordCount = content.trim().split(/\s+/).length;
-    return Math.ceil(wordCount / wordsPerMinute);
-  };
+  // Check if current user is the author of this blog
+  const isAuthor = currentUser && blog && blog.authorId === currentUser.uid;
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
+        <div className="loading-spinner mb-6"></div>
+        <p className="text-lg lg:text-xl text-gray-600 text-center animate-pulse">
+          Loading blog post...
+        </p>
       </div>
     );
   }
 
   if (!blog) {
     return (
-      <div className="max-w-4xl mx-auto text-center py-12">
-        <h1 className="text-2xl font-bold text-gray-800 mb-4">Blog Not Found</h1>
-        <p className="text-gray-600 mb-6">The blog you're looking for doesn't exist or has been removed.</p>
-        <Link
-          to="/"
-          className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center space-x-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Back to Home</span>
-        </Link>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white py-8 px-6 sm:px-10 shadow-xl rounded-xl border border-gray-200 animate-fade-in">
+            <span className="block text-6xl mb-6">📭</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+              Blog Not Found
+            </h2>
+            <p className="text-gray-600 mb-8">
+              The blog post you're looking for doesn't exist or has been removed.
+            </p>
+            <Link to="/" className="btn-primary btn-large w-full justify-center">
+              <span className="mr-2">🏠</span>
+              Back to Home
+            </Link>
+          </div>
+        </div>
       </div>
     );
   }
 
-  const isAuthor = isAuthenticated && user && blog.authorId === user.id;
-
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Navigation */}
-      <div className="mb-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span>Back</span>
-        </button>
-      </div>
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
+        {/* Navigation */}
+        <div className="mb-8 animate-fade-in">
+          <Link 
+            to="/" 
+            className="inline-flex items-center text-primary-600 hover:text-primary-500 transition-colors mb-6"
+          >
+            <span className="mr-2">←</span>
+            Back to Home
+          </Link>
+        </div>
 
-      {/* Blog Header */}
-      <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-        <div className="p-8">
-          <h1 className="text-3xl md:text-4xl font-bold text-gray-800 mb-6 leading-tight">
-            {blog.title}
-          </h1>
-
-          {/* Meta Information */}
-          <div className="flex flex-wrap items-center justify-between mb-6 pb-6 border-b border-gray-200">
-            <div className="flex items-center space-x-6 mb-4 md:mb-0">
-              <div className="flex items-center space-x-2">
-                <User className="h-5 w-5 text-gray-400" />
-                <span className="text-gray-600">By {blog.authorName}</span>
+        {/* Blog Article */}
+        <article className="bg-white shadow-xl rounded-xl border border-gray-200 animate-slide-up">
+          {/* Header */}
+          <div className="p-6 sm:p-8 lg:p-10 border-b border-gray-200">
+            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-6 leading-tight">
+              {blog.title}
+            </h1>
+            
+            {/* Author and Date Info */}
+            <div className="flex flex-wrap items-center gap-6 text-gray-600 mb-6">
+              <div className="flex items-center gap-2">
+                <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-lg">
+                    {(blog.author || 'A').charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">
+                    {blog.author || 'Anonymous'}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {blog.authorEmail || 'Author'}
+                  </p>
+                </div>
               </div>
-              <div className="flex items-center space-x-2">
-                <Calendar className="h-5 w-5 text-gray-400" />
-                <span className="text-gray-600">{formatDate(blog.createdAt)}</span>
-              </div>
-              <div className="text-gray-600">
-                {getReadingTime(blog.content)} min read
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1">
+                  <span className="text-gray-400">📅</span>
+                  <span className="text-sm">
+                    {formatDate(blog.createdAt)}
+                  </span>
+                </div>
+                
+                {blog.updatedAt && blog.updatedAt !== blog.createdAt && (
+                  <div className="flex items-center gap-1">
+                    <span className="text-gray-400">✏️</span>
+                    <span className="text-sm italic">
+                      Updated {formatDate(blog.updatedAt)}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <button
-                onClick={handleShare}
-                className="flex items-center space-x-2 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <Share2 className="h-4 w-4" />
-                <span>Share</span>
-              </button>
-
-              {isAuthor && (
-                <>
-                  <Link
-                    to={`/edit/${blog.id}`}
-                    className="flex items-center space-x-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-200 transition-colors"
-                  >
-                    <Edit className="h-4 w-4" />
-                    <span>Edit</span>
-                  </Link>
-                  <button
-                    onClick={() => setDeleteConfirm(true)}
-                    className="flex items-center space-x-2 bg-red-100 text-red-700 px-4 py-2 rounded-lg hover:bg-red-200 transition-colors"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    <span>Delete</span>
-                  </button>
-                </>
-              )}
+            {/* Author Actions */}
+            {isAuthor && (
+              <div className="flex flex-wrap gap-3 pt-6 border-t border-gray-200">
+                <Link 
+                  to={`/edit/${id}`} 
+                  className="btn-primary group"
+                >
+                  <span className="mr-2">✏️</span>
+                  Edit Post
+                </Link>
+                <button 
+                  onClick={handleDelete} 
+                  disabled={deleting}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed group"
+                >
+                  {deleting ? (
+                    <>
+                      <div className="inline-block w-4 h-4 border-2 border-white border-r-transparent rounded-full animate-spin mr-2"></div>
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <span className="mr-2">🗑️</span>
+                      Delete Post
+                    </>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+          
+          {/* Content */}
+          <div className="p-6 sm:p-8 lg:p-10">
+            <div className="prose prose-lg max-w-none">
+              {blog.content.split('\n\n').map((paragraph, index) => (
+                paragraph.trim() && (
+                  <p key={index} className="mb-6 leading-relaxed text-gray-700">
+                    {paragraph.trim()}
+                  </p>
+                )
+              ))}
             </div>
           </div>
-
-          {/* Update Notice */}
-          {blog.updatedAt !== blog.createdAt && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <p className="text-blue-800 text-sm">
-                Last updated on {formatDate(blog.updatedAt)}
-              </p>
-            </div>
-          )}
-
-          {/* Blog Content */}
-          <div className="prose prose-lg max-w-none">
-            <div className="whitespace-pre-wrap text-gray-800 leading-relaxed">
-              {blog.content}
+          
+          {/* Footer */}
+          <div className="p-6 sm:p-8 lg:p-10 border-t border-gray-200 bg-gray-50">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-primary-100 text-primary-800">
+                  Blog Post
+                </span>
+                {blog.category && (
+                  <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                    {blog.category}
+                  </span>
+                )}
+              </div>
+              
+              <div className="text-sm text-gray-500">
+                Article ID: {id}
+              </div>
             </div>
           </div>
+        </article>
+
+        {/* Related Actions */}
+        <div className="mt-8 text-center animate-fade-in">
+          <Link to="/" className="btn-primary btn-large group">
+            <span className="mr-2 group-hover:animate-bounce">📚</span>
+            Read More Stories
+          </Link>
         </div>
       </div>
-
-      {/* Author Info */}
-      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">About the Author</h3>
-        <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
-            <span className="text-white font-semibold text-lg">
-              {blog.authorName.charAt(0).toUpperCase()}
-            </span>
-          </div>
-          <div>
-            <p className="font-medium text-gray-800">{blog.authorName}</p>
-            <p className="text-gray-600">Published on {formatDate(blog.createdAt)}</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Call to Action */}
-      {!isAuthenticated && (
-        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-8 text-center">
-          <h3 className="text-2xl font-bold text-gray-800 mb-4">
-            Enjoyed this blog?
-          </h3>
-          <p className="text-gray-600 mb-6">
-            Join our community to read more amazing content and share your own stories.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link
-              to="/register"
-              className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Start Writing
-            </Link>
-            <Link
-              to="/login"
-              className="border border-blue-600 text-blue-600 px-6 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold"
-            >
-              Sign In
-            </Link>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">
-              Confirm Delete
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Are you sure you want to delete this blog post? This action cannot be undone.
-            </p>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setDeleteConfirm(false)}
-                className="flex-1 bg-gray-200 text-gray-800 px-4 py-2 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
-};
+}
 
 export default BlogDetail;

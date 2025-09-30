@@ -1,199 +1,225 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import { useAuth } from '../contexts/AuthContext';
-import { blogService } from '../utils/blog';
-import { Save, ArrowLeft, AlertCircle, CheckCircle } from 'lucide-react';
+import { createBlog } from '../utils/blog';
 
-const CreateBlog = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
-  const [formData, setFormData] = useState({
-    title: '',
-    content: ''
-  });
+function CreateBlog() {
+  const [title, setTitle] = useState('');
+  const [content, setContent] = useState('');
+  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState('');
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-    setMessage(''); // Clear message when user types
-  };
+  // Check if user is logged in
+  if (!currentUser) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-md w-full text-center">
+          <div className="bg-white py-8 px-6 sm:px-10 shadow-xl rounded-xl border border-gray-200 animate-fade-in">
+            <span className="block text-6xl mb-6">🔒</span>
+            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-4">
+              Authentication Required
+            </h2>
+            <p className="text-gray-600 mb-8">
+              Please sign in to your account to create blog posts
+            </p>
+            <Link to="/login" className="btn-primary btn-large w-full justify-center">
+              <span className="mr-2">🚀</span>
+              Sign In
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     setLoading(true);
-    setMessage('');
 
-    if (!formData.title.trim() || !formData.content.trim()) {
-      setMessage({ type: 'error', text: 'Please fill in all fields' });
+    // Simple validation
+    if (!title || !content) {
+      setError('Please fill in all fields');
+      setLoading(false);
+      return;
+    }
+
+    if (title.length < 5) {
+      setError('Title must be at least 5 characters');
+      setLoading(false);
+      return;
+    }
+
+    if (content.length < 50) {
+      setError('Content must be at least 50 characters');
       setLoading(false);
       return;
     }
 
     try {
-      const result = blogService.createBlog(formData, user);
+      console.log('Current user:', currentUser);
+      console.log('Creating blog...');
       
-      if (result.success) {
-        setMessage({ type: 'success', text: 'Blog created successfully!' });
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 1500);
-      } else {
-        setMessage({ type: 'error', text: 'Failed to create blog. Please try again.' });
+      // Validate user data
+      if (!currentUser || !currentUser.uid) {
+        throw new Error('User not authenticated or missing user ID');
       }
-    } catch (err) {
-      setMessage({ type: 'error', text: 'An error occurred. Please try again.' });
+      
+      const blogData = {
+        title: title.trim(),
+        content: content.trim(),
+        author: currentUser.displayName || currentUser.name || currentUser.email.split('@')[0],
+        authorEmail: currentUser.email,
+        authorId: currentUser.uid
+      };
+      
+      console.log('Blog data to create:', blogData);
+      
+      // Validate all required fields are present
+      if (!blogData.authorId || !blogData.authorEmail) {
+        throw new Error('Missing required user information');
+      }
+      
+      const newBlogId = await createBlog(blogData);
+      console.log('New blog post created with ID:', newBlogId);
+      toast.success('Blog post created successfully! 🎉');
+      navigate('/');
+    } catch (error) {
+      console.error('CreateBlog component error:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        stack: error.stack
+      });
+      
+      // More specific error messages with toast
+      if (error.code === 'permission-denied') {
+        toast.error('Permission denied. Please check your Firestore security rules.');
+      } else if (error.code === 'unavailable') {
+        toast.error('Service unavailable. Please try again later.');
+      } else {
+        toast.error(`Failed to create blog post: ${error.message}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  const wordCount = formData.content.trim().split(/\s+/).filter(word => word.length > 0).length;
-  const estimatedReadTime = Math.ceil(wordCount / 200); // Average reading speed: 200 words/minute
-
   return (
-    <div className="max-w-4xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="text-gray-600 hover:text-gray-800 transition-colors"
-          >
-            <ArrowLeft className="h-6 w-6" />
-          </button>
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Create New Blog</h1>
-            <p className="text-gray-600">Share your thoughts with the world</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Message */}
-      {message && (
-        <div className={`mb-6 p-4 rounded-lg border ${
-          message.type === 'error' 
-            ? 'bg-red-50 border-red-200 text-red-800' 
-            : 'bg-green-50 border-green-200 text-green-800'
-        }`}>
-          <div className="flex items-center space-x-2">
-            {message.type === 'error' ? (
-              <AlertCircle className="h-5 w-5" />
-            ) : (
-              <CheckCircle className="h-5 w-5" />
-            )}
-            <span>{message.text}</span>
-          </div>
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Title */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
-            Blog Title *
-          </label>
-          <input
-            type="text"
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="Enter an engaging title for your blog..."
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-lg"
-            required
-          />
-          <p className="text-sm text-gray-500 mt-2">
-            A compelling title helps readers understand what your blog is about
+    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-3xl mx-auto">
+        {/* Header */}
+        <div className="text-center mb-8 animate-fade-in">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+            ✍️ Create New Blog Post
+          </h1>
+          <p className="text-lg text-gray-600">
+            Share your knowledge and insights with the community
           </p>
         </div>
 
-        {/* Content */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex justify-between items-center mb-2">
-            <label htmlFor="content" className="block text-sm font-medium text-gray-700">
-              Blog Content *
-            </label>
-            <div className="text-sm text-gray-500">
-              {wordCount} words • ~{estimatedReadTime} min read
-            </div>
-          </div>
-          <textarea
-            id="content"
-            name="content"
-            value={formData.content}
-            onChange={handleChange}
-            rows={20}
-            placeholder="Start writing your blog content here...
-
-You can write about:
-• Your experiences and insights
-• Technical tutorials
-• Project showcases
-• Industry trends
-• Personal stories
-
-Feel free to express your thoughts and share your knowledge!"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-            required
-          />
-          <div className="mt-3 flex justify-between items-center text-sm text-gray-500">
-            <span>Write engaging content that provides value to your readers</span>
-            <span className={`${wordCount < 100 ? 'text-orange-500' : 'text-green-500'}`}>
-              {wordCount < 100 ? 'Consider adding more content' : 'Good length!'}
-            </span>
-          </div>
-        </div>
-
-        {/* Author Info */}
-        <div className="bg-blue-50 rounded-lg p-4">
-          <h3 className="font-medium text-blue-900 mb-2">Author Information</h3>
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-semibold">
-                {user?.name?.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            <div>
-              <p className="font-medium text-blue-900">{user?.name}</p>
-              <p className="text-sm text-blue-700">{user?.email}</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row gap-4 pt-6">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="flex-1 bg-gray-200 text-gray-800 px-6 py-3 rounded-lg hover:bg-gray-300 transition-colors font-semibold"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading || !formData.title.trim() || !formData.content.trim()}
-            className="flex-1 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-          >
-            {loading ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                <span>Publishing...</span>
-              </>
-            ) : (
-              <>
-                <Save className="h-5 w-5" />
-                <span>Publish Blog</span>
-              </>
+        {/* Form */}
+        <div className="bg-white shadow-xl rounded-xl border border-gray-200 animate-slide-up">
+          <div className="p-6 sm:p-8 lg:p-10">
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg animate-slide-up">
+                <div className="flex items-center">
+                  <span className="text-red-500 mr-2">⚠️</span>
+                  <span className="text-red-700 text-sm">{error}</span>
+                </div>
+              </div>
             )}
-          </button>
+            
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Title Field */}
+              <div className="form-group">
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                  Blog Title *
+                </label>
+                <input
+                  id="title"
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="Enter an engaging title for your blog post"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-sm"
+                  disabled={loading}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Title should be at least 5 characters long
+                </p>
+              </div>
+              
+              {/* Content Field */}
+              <div className="form-group">
+                <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+                  Blog Content *
+                </label>
+                <textarea
+                  id="content"
+                  value={content}
+                  onChange={(e) => setContent(e.target.value)}
+                  placeholder="Write your blog content here... Share your insights, experiences, and knowledge with the community!"
+                  rows="12"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors duration-200 text-sm resize-y min-h-[300px]"
+                  disabled={loading}
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Content should be at least 50 characters long
+                </p>
+              </div>
+              
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-200">
+                <button 
+                  type="submit" 
+                  disabled={loading}
+                  className="btn-primary btn-large justify-center flex-1 group disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loading ? (
+                    <>
+                      <div className="loading-spinner w-5 h-5 mr-2"></div>
+                      Publishing...
+                    </>
+                  ) : (
+                    <>
+                      <span className="mr-2 group-hover:animate-bounce">🚀</span>
+                      Publish Blog Post
+                    </>
+                  )}
+                </button>
+                
+                <Link 
+                  to="/" 
+                  className="btn-outline btn-large justify-center sm:w-auto group"
+                  disabled={loading}
+                >
+                  <span className="mr-2">❌</span>
+                  Cancel
+                </Link>
+              </div>
+            </form>
+          </div>
         </div>
-      </form>
+
+        {/* Writing Tips */}
+        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6 animate-fade-in">
+          <h3 className="text-lg font-semibold text-blue-900 mb-3">
+            💡 Writing Tips
+          </h3>
+          <ul className="space-y-2 text-sm text-blue-800">
+            <li>• Make your title clear and compelling</li>
+            <li>• Use headings and paragraphs to structure your content</li>
+            <li>• Include examples and practical insights</li>
+            <li>• Proofread before publishing</li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
-};
+}
 
 export default CreateBlog;

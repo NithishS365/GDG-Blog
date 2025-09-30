@@ -77,3 +77,58 @@ export const blogService = {
     );
   }
 };
+
+// Export individual functions for compatibility with original components
+export const getAllBlogs = () => {
+  return JSON.parse(localStorage.getItem('gdg_blogs') || '[]');
+};
+
+export const getBlog = (id) => {
+  const blogs = getAllBlogs();
+  return blogs.find(blog => blog.id === id);
+};
+
+export const createBlog = (blogData) => {
+  const blogs = getAllBlogs();
+  const newBlog = {
+    id: Date.now().toString(),
+    ...blogData,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString()
+  };
+
+  blogs.push(newBlog);
+  localStorage.setItem('gdg_blogs', JSON.stringify(blogs));
+  return newBlog.id;
+};
+
+export const updateBlog = (id, blogData) => {
+  const blogs = getAllBlogs();
+  const blogIndex = blogs.findIndex(blog => blog.id === id);
+  
+  if (blogIndex === -1) {
+    throw new Error('Blog not found');
+  }
+
+  blogs[blogIndex] = {
+    ...blogs[blogIndex],
+    ...blogData,
+    updatedAt: new Date().toISOString()
+  };
+
+  localStorage.setItem('gdg_blogs', JSON.stringify(blogs));
+  return blogs[blogIndex];
+};
+
+export const deleteBlog = (id) => {
+  const blogs = getAllBlogs();
+  const blogIndex = blogs.findIndex(blog => blog.id === id);
+  
+  if (blogIndex === -1) {
+    throw new Error('Blog not found');
+  }
+
+  blogs.splice(blogIndex, 1);
+  localStorage.setItem('gdg_blogs', JSON.stringify(blogs));
+  return true;
+};
