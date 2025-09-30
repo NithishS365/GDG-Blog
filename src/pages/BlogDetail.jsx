@@ -65,7 +65,7 @@ function BlogDetail() {
   };
 
   // Check if current user is the author of this blog
-  const isAuthor = currentUser && blog && blog.authorId === currentUser.uid;
+  const isAuthor = currentUser && blog && blog.authorId === currentUser.id;
 
   if (loading) {
     return (

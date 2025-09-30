@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getAllBlogs } from '../utils/blog';
+import { toast } from 'react-toastify';
+import { getAllBlogs, deleteBlog } from '../utils/blog';
 import { useAuth } from '../contexts/AuthContext';
 
 function Home() {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deletingBlogId, setDeletingBlogId] = useState(null);
   const { currentUser } = useAuth();
 
   useEffect(() => {
@@ -25,6 +27,25 @@ function Home() {
       setBlogs([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteBlog = async (blogId, blogTitle) => {
+    if (!window.confirm(`Are you sure you want to delete "${blogTitle}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingBlogId(blogId);
+    try {
+      await deleteBlog(blogId);
+      toast.error('Blog post deleted successfully! 🗑️');
+      // Refresh the blogs list
+      fetchBlogs();
+    } catch (error) {
+      console.error('Error deleting blog:', error);
+      toast.error('Failed to delete blog post. Please try again.');
+    } finally {
+      setDeletingBlogId(null);
     }
   };
 
@@ -214,13 +235,33 @@ function Home() {
                       </Link>
                       
                       {currentUser && blog.authorId === currentUser.id && (
-                        <Link 
-                          to={`/edit/${blog.id}`} 
-                          className="btn-outline group"
-                        >
-                          <span className="mr-1">✏️</span>
-                          Edit
-                        </Link>
+                        <>
+                          <Link 
+                            to={`/edit/${blog.id}`} 
+                            className="btn-outline group"
+                          >
+                            <span className="mr-1">✏️</span>
+                            Edit
+                          </Link>
+                          
+                          <button
+                            onClick={() => handleDeleteBlog(blog.id, blog.title)}
+                            disabled={deletingBlogId === blog.id}
+                            className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg font-medium transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed group text-sm"
+                          >
+                            {deletingBlogId === blog.id ? (
+                              <>
+                                <div className="inline-block w-3 h-3 border-2 border-white border-r-transparent rounded-full animate-spin mr-1"></div>
+                                <span className="text-xs">Deleting...</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="mr-1">🗑️</span>
+                                Delete
+                              </>
+                            )}
+                          </button>
+                        </>
                       )}
                     </div>
                   </div>

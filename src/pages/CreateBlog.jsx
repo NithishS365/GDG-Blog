@@ -64,16 +64,16 @@ function CreateBlog() {
       console.log('Creating blog...');
       
       // Validate user data
-      if (!currentUser || !currentUser.uid) {
+      if (!currentUser || !currentUser.id) {
         throw new Error('User not authenticated or missing user ID');
       }
       
       const blogData = {
         title: title.trim(),
         content: content.trim(),
-        author: currentUser.displayName || currentUser.name || currentUser.email.split('@')[0],
+        author: currentUser.name || currentUser.email.split('@')[0],
         authorEmail: currentUser.email,
-        authorId: currentUser.uid
+        authorId: currentUser.id
       };
       
       console.log('Blog data to create:', blogData);

@@ -9,181 +9,57 @@ export const initializeDemoData = () => {
   const demoUsers = [
     {
       id: '1',
-      name: 'John Developer',
+      name: 'Nithish',
       email: 'demo@example.com',
       password: 'demo123',
       createdAt: new Date('2024-01-15').toISOString()
     },
     {
       id: '2',
-      name: 'Jane Smith',
-      email: 'jane@example.com',
+      name: 'Srinish',
+      email: 'srinish@example.com',
       password: 'password123',
       createdAt: new Date('2024-02-10').toISOString()
+    },
+    {
+      id: '3',
+      name: 'Kavitha',
+      email: 'kavitha@example.com',
+      password: 'password123',
+      createdAt: new Date('2024-01-25').toISOString()
     }
   ];
 
-  // Demo blogs
+  // Demo blogs with interesting topics
   const demoBlogs = [
     {
       id: '1',
-      title: 'Getting Started with React and Vite',
-      content: `React and Vite make a powerful combination for modern web development. Vite provides lightning-fast development experience with hot module replacement, while React gives us the component-based architecture we love.
-
-In this blog, I'll share my experience building applications with this stack and some best practices I've learned along the way.
-
-## Why Vite?
-
-Vite offers several advantages over traditional build tools:
-- **Fast cold start**: No bundling required during development
-- **Hot Module Replacement**: Instant updates without losing state  
-- **Optimized builds**: Production builds are highly optimized
-- **Rich ecosystem**: Great plugin ecosystem and framework integration
-
-## Setting Up Your Project
-
-Getting started is incredibly simple:
-
-\`\`\`bash
-npm create vite@latest my-app -- --template react
-cd my-app
-npm install
-npm run dev
-\`\`\`
-
-And you're ready to go! The development server starts in milliseconds, not seconds.
-
-## Best Practices
-
-Here are some tips I've learned:
-
-1. **Use TypeScript**: Even for small projects, TypeScript catches errors early
-2. **Leverage Vite plugins**: There are plugins for almost everything
-3. **Optimize imports**: Use dynamic imports for code splitting
-4. **Configure your IDE**: Set up your editor for the best development experience
-
-## Conclusion
-
-React + Vite is an excellent choice for modern web applications. The developer experience is fantastic, and the performance benefits are real.
-
-Happy coding!`,
+      title: 'The Psychology Behind Social Media Addiction',
+      content: `Have you ever wondered why you can't put your phone down? Social media platforms are designed using psychological principles that trigger dopamine release in our brains. Every notification, like, and comment creates a small reward that keeps us coming back for more. Understanding these mechanisms can help us develop healthier relationships with technology. The intermittent reinforcement schedule used by these platforms is the same principle that makes gambling addictive. By recognizing these patterns, we can take control of our digital habits and use technology more mindfully.`,
       authorId: '1',
-      authorName: 'John Developer',
+      authorName: 'Nithish',
       createdAt: new Date('2024-03-01').toISOString(),
       updatedAt: new Date('2024-03-01').toISOString()
     },
     {
       id: '2',
-      title: 'The Future of Web Development: Trends to Watch',
-      content: `The web development landscape is constantly evolving. As we move forward, several trends are shaping how we build applications and user experiences.
-
-## 1. Server-Side Rendering (SSR) Renaissance
-
-With frameworks like Next.js, Nuxt.js, and SvelteKit, SSR is making a strong comeback. The benefits are clear:
-- Better SEO performance
-- Faster initial page loads
-- Improved user experience
-
-## 2. Edge Computing and CDNs
-
-Moving computation closer to users is becoming increasingly important:
-- Reduced latency
-- Better global performance
-- More resilient applications
-
-## 3. WebAssembly (WASM) Adoption
-
-WebAssembly is opening new possibilities:
-- Near-native performance in browsers
-- Bringing other languages to the web
-- Complex applications running client-side
-
-## 4. AI-Powered Development Tools
-
-AI is revolutionizing how we code:
-- Intelligent code completion
-- Automated testing
-- Code review assistance
-- Bug detection and fixes
-
-## 5. Progressive Web Apps (PWAs)
-
-PWAs continue to bridge the gap between web and native:
-- Offline functionality
-- Push notifications
-- Native-like experiences
-- Cross-platform compatibility
-
-## Conclusion
-
-The future of web development is exciting and full of possibilities. Staying updated with these trends will help us build better, more efficient applications.
-
-What trends are you most excited about? Let me know in the comments!`,
+      title: 'Climate Change: Small Actions, Big Impact',
+      content: `Climate change might seem overwhelming, but individual actions collectively make a significant difference. Simple changes like reducing meat consumption, using public transport, and switching to renewable energy can reduce your carbon footprint dramatically. Did you know that if everyone replaced just one car trip per week with cycling or walking, global CO2 emissions would drop by millions of tons annually? The key is consistency and inspiring others through your actions. Start small: carry a reusable water bottle, shop locally, and choose products with minimal packaging. Every eco-friendly choice is a vote for the planet's future.`,
       authorId: '2',
-      authorName: 'Jane Smith',
+      authorName: 'Srinish',
       createdAt: new Date('2024-03-05').toISOString(),
       updatedAt: new Date('2024-03-05').toISOString()
     },
     {
       id: '3',
-      title: 'Building Responsive Layouts with Tailwind CSS',
-      content: `Tailwind CSS has revolutionized how I approach styling. Its utility-first approach makes building responsive layouts intuitive and maintainable.
-
-## Why Tailwind CSS?
-
-After years of writing custom CSS and using various frameworks, Tailwind feels like a breath of fresh air:
-
-- **Utility-first**: No more naming classes or worrying about CSS specificity
-- **Responsive design**: Built-in responsive modifiers make mobile-first design easy
-- **Consistency**: Design system built right into your utility classes
-- **Performance**: Only the styles you use get included in your final bundle
-
-## Responsive Design Made Easy
-
-One of Tailwind's strongest features is its approach to responsive design:
-
-\`\`\`html
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-  <!-- Content automatically adapts to screen size -->
-</div>
-\`\`\`
-
-The mobile-first approach means you start with mobile styles and add larger screen styles as needed.
-
-## Common Patterns
-
-Here are some responsive patterns I use frequently:
-
-### Navigation
-- Mobile: Hamburger menu
-- Desktop: Horizontal navigation
-
-### Cards
-- Mobile: Single column
-- Tablet: Two columns  
-- Desktop: Three or four columns
-
-### Typography
-- Mobile: Smaller, more compact text
-- Desktop: Larger, more spacious text
-
-## Tips for Success
-
-1. **Start mobile-first**: Design for small screens first
-2. **Use the responsive prefixes**: sm:, md:, lg:, xl:, 2xl:
-3. **Leverage Tailwind's spacing scale**: Consistent spacing across breakpoints
-4. **Test on real devices**: Emulators are good, but real devices are better
-
-## Conclusion
-
-Tailwind CSS makes responsive design approachable and maintainable. Once you get used to the utility-first approach, you'll wonder how you ever built layouts without it.
-
-Give it a try on your next project – you might be surprised how much you enjoy it!`,
-      authorId: '1',
-      authorName: 'John Developer',
+      title: 'The Art of Mindful Living in a Chaotic World',
+      content: `In our fast-paced world, mindfulness has become more essential than ever. It's not about meditation retreats or complicated practices—it's about being present in everyday moments. Whether you're drinking morning coffee, walking to work, or having a conversation, mindfulness means fully engaging with the experience. Research shows that just 10 minutes of daily mindful breathing can reduce stress hormones by 30%. The beauty of mindfulness lies in its simplicity: notice your breath, observe your thoughts without judgment, and appreciate small moments. This practice can transform ordinary experiences into sources of peace and clarity.`,
+      authorId: '3',
+      authorName: 'Kavitha',
       createdAt: new Date('2024-03-10').toISOString(),
-      updatedAt: new Date('2024-03-12').toISOString()
+      updatedAt: new Date('2024-03-10').toISOString()
     }
+    
   ];
 
   // Store demo data

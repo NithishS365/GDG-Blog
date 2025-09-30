@@ -54,7 +54,7 @@ function EditBlog() {
       }
 
       // Check if current user is the author
-      if (blogData.authorId !== currentUser.uid) {
+      if (blogData.authorId !== currentUser.id) {
         setError('You can only edit your own blog posts');
         setLoadingBlog(false);
         return;

@@ -92,7 +92,11 @@ export const createBlog = (blogData) => {
   const blogs = getAllBlogs();
   const newBlog = {
     id: Date.now().toString(),
-    ...blogData,
+    title: blogData.title,
+    content: blogData.content,
+    author: blogData.author,
+    authorEmail: blogData.authorEmail,
+    authorId: blogData.authorId || blogData.uid, // Support both authorId and uid
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString()
   };
